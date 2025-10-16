@@ -1,11 +1,18 @@
 # indeed_full_scraper_bs4_fixed.py
 """
-Indeed RapidAPI scraper (fixed for fromDays validation).
+Stage 1 — Indeed RapidAPI job fetcher (BeautifulSoup-enabled)
 
-- Uses BeautifulSoup to clean descriptionHtml.
-- Uses a safe single POST (no polling).
-- Set RAPIDAPI_KEY environment variable before running.
-- Save as indeed_full_scraper_bs4_fixed.py and run: python indeed_full_scraper_bs4_fixed.py
+This script performs a single POST request to the Indeed Scraper endpoint on RapidAPI,
+saves the raw JSON response to a file, attempts to extract the job list, and writes
+a cleaned/flattened JSON + CSV outputs.
+
+Configuration / secrets:
+ - The RapidAPI key must be set in the environment variable `RAPIDAPI_KEY`.
+ - The RapidAPI host is assumed to be `indeed-scraper-api.p.rapidapi.com`.
+
+Conservative API usage:
+ - Default `maxRows` is small (15) to avoid consuming quota during testing.
+ - Polling for async task results is disabled by default to avoid repeated calls.
 
 Requirements:
   pip install requests beautifulsoup4
@@ -26,9 +33,7 @@ from bs4 import BeautifulSoup
 # -----------------------
 # CONFIG
 # -----------------------
-RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY", "")
-# If you must paste the key directly (not recommended), uncomment:
-# RAPIDAPI_KEY = "your_key_here"
+RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
 
 if not RAPIDAPI_KEY:
     raise RuntimeError("RAPIDAPI_KEY not found. Set the RAPIDAPI_KEY environment variable or edit the script.")
@@ -39,7 +44,7 @@ ENDPOINT_POST = f"https://{RAPIDAPI_HOST}/api/job"
 # Minimize API usage: single POST, small result set
 DEFAULT_MAX_ROWS = 15
 
-# IMPORTANT FIX: fromDays must be one of [1,3,7,14] — set to "7"
+
 PAYLOAD = {
     "scraper": {
         "maxRows": DEFAULT_MAX_ROWS,
@@ -61,8 +66,6 @@ RAW_JSON = Path("indeed_response_raw.json")
 TIMEOUT = 20
 RETRIES = 1
 BACKOFF_FACTOR = 0.5
-
-# Polling disabled by default to save calls
 POLL_IF_TASKID = False
 
 # Logging
@@ -73,6 +76,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(mes
 # Helpers
 # -----------------------
 def build_session() -> requests.Session:
+    """Build a requests Session with retry behavior and RapidAPI headers applied.
+    The session's headers carry authentication and the required host header."""
     s = requests.Session()
     retry = Retry(total=RETRIES, backoff_factor=BACKOFF_FACTOR,
                   status_forcelist=[429, 500, 502, 503], allowed_methods=frozenset(["POST", "GET"]))
@@ -92,6 +97,7 @@ def save_raw(obj: Any):
     logging.info("Saved raw response to %s", RAW_JSON)
 
 def html_to_text(html: Optional[str]) -> str:
+    """Convert HTML snippet to plain text using BeautifulSoup."""
     if not html:
         return ""
     soup = BeautifulSoup(html, "html.parser")

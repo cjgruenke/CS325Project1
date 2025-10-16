@@ -8,8 +8,8 @@ Assumptions:
  - All stage scripts live in the same directory and are named:
      stage1: indeed_full_scraper_bs4_fixed.py       (or your chosen stage1 filename)
      stage2: Stage2DataCleaningAndResumeParsing.py  (or Stage2DataCleaningAndResumeParsing_NoNLTK.py)
-     stage3: stage3_embed_openai.py
-     stage4: stage4_similarity.py
+     stage3: Stage3_embed_openai.py
+     stage4: Stage4_similarity.py
  - Required environment variables (RAPIDAPI_KEY, OPENAI_API_KEY) are set externally, OR
    you can edit the script to set them (not recommended for secrets).
  - You run this from the repo directory containing the scripts.
@@ -18,9 +18,6 @@ Usage:
   python orchestrator.py
   python orchestrator.py --resume myresume.pdf
   python orchestrator.py --skip-stage1 --skip-stage3
-
-Notes:
- - By default the orchestrator will stop on any stage error. You can change the behavior to continue on error.
 """
 
 import argparse
@@ -32,7 +29,7 @@ import shutil
 import time
 
 # ---------------------------------------------------------------------
-# CONFIG (edit if you want different filenames or to disable stages)
+# CONFIG
 # ---------------------------------------------------------------------
 # Filenames for stage scripts (must be in same folder)
 STAGE1_SCRIPT = "Stage1DataAcquisition.py"       # Stage 1: fetch API data
