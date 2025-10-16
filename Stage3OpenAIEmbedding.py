@@ -152,7 +152,7 @@ def main():
             out_lines.append(line)
             all_embeddings.append(e)
             idx += 1
-        # polite pause to avoid bursts (tune if you know your rate)
+        # pause to avoid bursts 
         time.sleep(0.1)
 
     # write JSONL
@@ -161,7 +161,7 @@ def main():
             f.write(json.dumps(obj) + "\n")
     print(f"Wrote job embeddings to {OUT_JSONL} ({len(out_lines)} vectors)")
 
-    # optional: save numpy array for quick load
+    #save numpy array for quick load
     arr = np.array(all_embeddings, dtype=np.float32)
     np.save(OUT_NPY, arr)
     print(f"Wrote numpy embeddings to {OUT_NPY} (shape: {arr.shape})")
